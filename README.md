@@ -17,15 +17,15 @@ Fork the repo.
 
 ## Change Log
 
-Number and name of feature: 
+Number and name of feature: Create Database
 
-Estimate of time needed to complete: 
+Estimate of time needed to complete: 1 hour
 
-Start time:
+Start time: 9:00am
 
-Finish time: 
+Finish time: 9:50am
 
-Actual time needed to complete: 
+Actual time needed to complete: 50 minutes 
 
 
 Number and name of feature: 
