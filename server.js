@@ -6,7 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const superagent = require('superagent');
 const pg = require('pg');
-const client = new pg.Client(process.env.DATABASE_URL);
+
 
 const app = express();
 
@@ -14,6 +14,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.static('./public'));
 
+
+//database setup
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+
+
+//API routes
 app.get('/', (request, response) => {
   response.send('server works');
 });
