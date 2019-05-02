@@ -89,40 +89,41 @@ function queryLocationDB(queryData, response){
 }
 
 function queryDB(queryData, tableName, response){
-  let sqlStatement = `SELECT * FROM ${tableName} WHERE search_query = $1;`;
+  let sqlStatement = `SELECT * FROM ${tableName} WHERE forecast = $1;`;
   let values = [queryData];
-  console.log('dynamic function querying database');
+  console.log('queryDB being executed');
   return client.query(sqlStatement, values)
     .then( data => {
       console.log(`accessed .then of queryDB`);
       if(data.rowCount > 0) {
         console.log(`sending data from database from queryDB`);
-        
         response.send(data.rows[0]);
       }
     })
     .catch(error => handleError(error));
-
 }
 
 app.get('/weather', (request, response) => {
   console.log(request.query.data);
-  try {
-    let weatherURL = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
-    superagent.get(weatherURL)
-      .end((err, res) => {
-        let daily = Object.entries(res.body)[6];
-        let dailyData = daily[1].data;//hourly day forecast
-        let myForecast = dailyData.map( element => {
-          let date = new Date(element.time * 1000).toDateString();
-          let temp = new Forecast(element.summary, date);
-          return temp;
-        });
-        response.send(myForecast);
+  // queryDB(request.query.data, 'forecast', response);
+  console.log('not in database, running api to insert');
+  let weatherURL = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+  superagent.get(weatherURL)
+    .then( res => {
+      let daily = Object.entries(res.body)[6];
+      let dailyData = daily[1].data;//hourly day forecast
+      let myForecast = dailyData.map( element => {
+        let date = new Date(element.time * 1000).toDateString();
+        let temp = new Forecast(element.summary, date);
+        return temp;
       });
-  } catch (error) {
-    response.send(handleError);
-  }
+      console.log('inserting into database');
+      // let insertStatement = 'INSERT INTO forecast ( forecast, time) VALUES ( $1, $2);';
+      // let insertValues = [myForecast.date.forecast, myForecast.temp.time];
+      // client.query(insertStatement, insertValues);
+      response.send(myForecast);
+    })
+    .catch(error => handleError(error));
 });
 
 app.get('/events', (request, response) => {
