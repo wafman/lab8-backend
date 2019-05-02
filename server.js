@@ -57,24 +57,40 @@ function handleError(error) {
 
 function getLocation(request, response){
   const queryData = request.query.data;
+  queryLocationDB(queryData, response);
+}
+
+function queryLocationDB(queryData, response){
+  // const queryData = request.query.data;
   let sqlStatement = 'SELECT * FROM geoloc WHERE search_query = $1;';
   let values = [queryData];
-  
   return client.query(sqlStatement, values)
     .then( data => {
       console.log(`accessed .then of return client`);
-
       if(data.rowCount > 0) {
         console.log(`sending data from database`);
-        return data.rows[0];
+        
+        response.send(data.rows[0]);
       } else {
+        console.log('retrieving data and saving to database');
         let geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${queryData}&key=${process.env.GEOCODE_API_KEY}`;
-
         return superagent.get(geocodeURL)
-          .then( res => response.send(new GEOloc(queryData, res.body)))
+          .then( res => {
+            let location = new GEOloc(queryData, res.body);
+            let insertStatement = 'INSERT INTO geoloc ( search_query, formatted_query, latitude, longitude) VALUES ( $1, $2, $3, $4);';
+            let insertValues = [location.search_query, location.formatted_query, location.latitude, location.longitude];
+            client.query(insertStatement, insertValues);
+            response.send(location);
+          })
           .catch(error => handleError(error));
       }
-    });
+    })
+    .catch(error => handleError(error));
+}
+
+function queryDB(){
+  let sqlStatement = 'SELECT * FROM geoloc WHERE search_query = $1;';
+  let values = [queryData];
 }
 
 
