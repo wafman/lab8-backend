@@ -88,13 +88,22 @@ function queryLocationDB(queryData, response){
     .catch(error => handleError(error));
 }
 
-function queryDB(){
-  let sqlStatement = 'SELECT * FROM geoloc WHERE search_query = $1;';
+function queryDB(queryData, tableName, response){
+  let sqlStatement = `SELECT * FROM ${tableName} WHERE search_query = $1;`;
   let values = [queryData];
+  console.log('dynamic function querying database');
+  return client.query(sqlStatement, values)
+    .then( data => {
+      console.log(`accessed .then of queryDB`);
+      if(data.rowCount > 0) {
+        console.log(`sending data from database from queryDB`);
+        
+        response.send(data.rows[0]);
+      }
+    })
+    .catch(error => handleError(error));
+
 }
-
-
-
 
 app.get('/weather', (request, response) => {
   console.log(request.query.data);
