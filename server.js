@@ -25,6 +25,10 @@ app.get('/', (request, response) => {
   response.send('server works');
 });
 
+app.get('/location', getLocation);
+
+
+//constructor functions
 function GEOloc(query, res) {
   this.search_query = query;
   this.formatted_query = res.results[0].formatted_address;
@@ -45,24 +49,35 @@ function Event(data){
   this.summary = data.summary;
 }
 
-function handleError() {
+
+//helper functions
+function handleError(error) {
   return { 'status': 500, 'responseText': 'Sorry, something went wrong' };
 }
 
-app.get('/location', (request, response) => {
-  try {
-    const queryData = request.query.data;
-    let geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${queryData}&key=${process.env.GEOCODE_API_KEY}`;
-    superagent.get(geocodeURL)
-      .end((err, res) => {
-        const location = new GEOloc(queryData, res.body);
-        response.send(location);
-      });
-  } catch (error) {
-    response.send(handleError);
-  }
+function getLocation(request, response){
+  const queryData = request.query.data;
+  let sqlStatement = 'SELECT * FROM geoloc WHERE search_query = $1;';
+  let values = [queryData];
+  
+  return client.query(sqlStatement, values)
+    .then( data => {
+      console.log(`accessed .then of return client`);
 
-});
+      if(data.rowCount > 0) {
+        console.log(`sending data from database`);
+        return data.rows[0];
+      } else {
+        let geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${queryData}&key=${process.env.GEOCODE_API_KEY}`;
+
+        return superagent.get(geocodeURL)
+          .then( res => response.send(new GEOloc(queryData, res.body)))
+          .catch(error => handleError(error));
+      }
+    });
+}
+
+
 
 
 app.get('/weather', (request, response) => {
